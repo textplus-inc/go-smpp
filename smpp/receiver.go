@@ -14,6 +14,7 @@ import (
 
 	"github.com/fiorix/go-smpp/smpp/pdu"
 	"github.com/fiorix/go-smpp/smpp/pdu/pdufield"
+	"github.com/fiorix/go-smpp/smpp/pdu/pdutext"
 )
 
 // Receiver implements an SMPP client receiver.
@@ -163,15 +164,53 @@ func (r *Receiver) handlePDU() {
 				totalParts = int(udh.IEData.Data[1])
 				partNum = int(udh.IEData.Data[2])
 
-				// appendMsgPart := "\n" + "(" + strconv.Itoa(partNum) + "/" + strconv.Itoa(totalParts) + ")"
+				appendMsgPart := "\n" + "(" + strconv.Itoa(partNum) + "/" + strconv.Itoa(totalParts) + ")"
+
+				dc := p.Fields()[pdufield.DataCoding].String()
+				dci, err := strconv.ParseInt(dc, 16, 8)
+				if err != nil {
+					r.Handler(p)
+					continue
+				}
+				dataCoding := pdutext.DataCoding(uint8(dci))
+				// decode SMS
+				msg := p.Fields()[pdufield.ShortMessage].Bytes()
+				shortMessage := string(decode(dataCoding, msg))
+				shortMessage = shortMessage + appendMsgPart
+				encode(dataCoding, []byte(shortMessage))
 				// shortMsg := append(sm.Data, []byte(appendMsgPart)...)
-				p.Fields().Set("tp_longsms_part", []byte("("+strconv.Itoa(partNum)+"/"+strconv.Itoa(totalParts)+")"))
-				// p.Fields().Set(pdufield.ShortMessage, shortMsg)
+				p.Fields().Set(pdufield.ShortMessage, encode(dataCoding, []byte(shortMessage)))
 
 				// Handle
 				r.Handler(p)
 			}
 		}
+	}
+}
+
+func decode(dataCoding pdutext.DataCoding, text []byte) []byte {
+	switch dataCoding {
+	case pdutext.Latin1Type:
+		return pdutext.Latin1(text).Decode()
+	case pdutext.UCS2Type:
+		return pdutext.UCS2(text).Decode()
+	case pdutext.ISO88595Type:
+		return pdutext.ISO88595(text).Decode()
+	default:
+		return text
+	}
+}
+
+func encode(dataCoding pdutext.DataCoding, text []byte) []byte {
+	switch dataCoding {
+	case pdutext.Latin1Type:
+		return pdutext.Latin1(text).Encode()
+	case pdutext.UCS2Type:
+		return pdutext.UCS2(text).Encode()
+	case pdutext.ISO88595Type:
+		return pdutext.ISO88595(text).Encode()
+	default:
+		return text
 	}
 }
 
