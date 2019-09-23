@@ -116,8 +116,7 @@ func idInList(id pdu.ID, list []pdu.ID) bool {
 
 func (r *Receiver) handlePDU() {
 	var (
-		ok bool
-		// sm                  *pdufield.SM
+		ok                  bool
 		udhList             *pdufield.UDHList
 		totalParts, partNum int
 	)
@@ -177,8 +176,6 @@ func (r *Receiver) handlePDU() {
 				msg := p.Fields()[pdufield.ShortMessage].Bytes()
 				shortMessage := string(decode(dataCoding, msg))
 				shortMessage = shortMessage + appendMsgPart
-				encode(dataCoding, []byte(shortMessage))
-				// shortMsg := append(sm.Data, []byte(appendMsgPart)...)
 				p.Fields().Set(pdufield.ShortMessage, encode(dataCoding, []byte(shortMessage)))
 
 				// Handle
