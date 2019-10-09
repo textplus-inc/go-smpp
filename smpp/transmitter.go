@@ -345,7 +345,15 @@ func (t *Transmitter) SubmitLongMsg(sm *ShortMessage) ([]ShortMessage, error) {
 
 	if countParts == 1 {
 		resp, err := t.Submit(sm)
-		return []ShortMessage{*resp}, err
+		if err != nil {
+			return nil, err
+		} else {
+			if resp == nil {
+				return []ShortMessage{*sm}, nil
+			} else {
+				return []ShortMessage{*resp}, nil
+			}
+		}
 	}
 
 	parts := make([]ShortMessage, 0, countParts)
