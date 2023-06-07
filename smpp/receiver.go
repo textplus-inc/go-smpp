@@ -158,7 +158,7 @@ func (r *Receiver) handlePDU() {
 loop:
 	for {
 		p, err := r.cl.Read()
-		if err != nil {
+		if err != nil || p == nil {
 			break
 		}
 
@@ -221,7 +221,14 @@ loop:
 				}
 
 				// Order up PDUs
-				orderedBodies = make([]*bytes.Buffer, partsCount)
+				// FIXME: added +3 to partsCount due to panic - index out of range:
+				// panic: runtime error: index out of range [4] with length 3
+				// goroutine 110 [running]:
+				// github.com/fiorix/go-smpp/smpp.(*Receiver).handlePDU(0xc000386000)
+				// 	/go/pkg/mod/github.com/adrianlop/go-smpp@v0.0.0-20190912131229-0a1b0575a407/smpp/receiver.go:226 +0xa6f
+				// created by github.com/fiorix/go-smpp/smpp.(*Receiver).bindFunc
+				orderedBodies = make([]*bytes.Buffer, partsCount+3)
+				// TODO: maybe this is a FIX  ==> orderedBodies = make([]*bytes.Buffer, mh.PartsCount)
 				for _, mp := range mh.MessageParts {
 					orderedBodies[mp.PartID-1] = mp.Data
 				}
@@ -229,7 +236,12 @@ loop:
 				// Merge PDUs
 				var buf bytes.Buffer
 				for _, body := range orderedBodies {
-					buf.Write(body.Bytes())
+					if body != nil {
+						_, err := buf.Write(body.Bytes())
+						if err != nil {
+							continue
+						}
+					}
 				}
 
 				p.Fields().Set(pdufield.ShortMessage, buf.Bytes())
