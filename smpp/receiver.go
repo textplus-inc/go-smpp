@@ -196,6 +196,8 @@ loop:
 				msgID = int(udh.IEData.Data[0])
 				partsCount = int(udh.IEData.Data[1])
 
+				fmt.Printf("msgID = %v | totalParts = %v | partID = %v", int(udh.IEData.Data[0]), int(udh.IEData.Data[1]), int(udh.IEData.Data[2]))
+
 				// Check if message part was already added to a MergeHolder
 				r.mg.Lock()
 				if mh, ok = r.mg.mergeHolders[msgID]; !ok {
