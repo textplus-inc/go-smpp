@@ -196,8 +196,6 @@ loop:
 				msgID = int(udh.IEData.Data[0])
 				partsCount = int(udh.IEData.Data[1])
 
-				fmt.Printf("msgID = %v | totalParts = %v | partID = %v", int(udh.IEData.Data[0]), int(udh.IEData.Data[1]), int(udh.IEData.Data[2]))
-
 				// Check if message part was already added to a MergeHolder
 				r.mg.Lock()
 				if mh, ok = r.mg.mergeHolders[msgID]; !ok {
@@ -216,6 +214,13 @@ loop:
 					Data:   bytes.NewBuffer(sm.Data),
 				})
 				mh.LastWriteTime = time.Now()
+
+				fmt.Printf("OJOBUG: msgID-%v, partID-%v, partsCount-%v, mh.PartsCount-%v\n", udh.IEData.Data[0], mh.PartsCount, udh.IEData.Data[1], udh.IEData.Data[2])
+				fmt.Printf("OJOBUG: MergeHolder = %+v\n", mh)
+
+				if mh.PartsCount != partsCount {
+					fmt.Printf("Potentially wrong MsgID: %v\n", msgID)
+				}
 
 				// Check if we have all the parts of the message
 				if len(mh.MessageParts) != mh.PartsCount {
